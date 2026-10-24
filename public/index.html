@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-Hidro Chamados + IA</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 650px; }
+        form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        button { margin-top: 15px; padding: 10px 15px; background: #0056b3; color: white; border: none; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #003d80; }
+        ul { list-style-type: none; padding: 0; }
+        li { padding: 12px; background: #f8f9fa; border: 1px solid #ddd; margin-bottom: 8px; border-radius: 4px; }
+        .tag-critica { color: white; background: #d9534f; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+        .tag-media { color: white; background: #f0ad4e; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+        .tag-baixa { color: white; background: #5cb85c; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mini-Hidro Chamados (com Gemini IA)</h1>
+    </header>
+
+    <main>
+        <!-- Form de Login -->
+        <section id="sec-login">
+            <h2>Autenticação</h2>
+            <form id="form-login">
+                <label for="email">E-mail:</label>
+                <input type="email" id="email" value="aluno@univesp.br" required>
+                
+                <label for="senha">Senha (use: 123456):</label>
+                <input type="password" id="senha" value="123456" required>
+                
+                <button type="submit">Entrar</button>
+            </form>
+        </section>
+
+        <!-- Aplicação principal -->
+        <section id="sec-app" style="display:none;">
+            <h2>Abrir Novo Chamado</h2>
+            <form id="form-chamado">
+                <label for="titulo">Descrição do Problema:</label>
+                <input type="text" id="titulo" placeholder="Ex: Cano mestre estourado jorrando água na rua" required>
+                
+                <label for="cep">CEP:</label>
+                <input type="text" id="cep" placeholder="01310100" maxlength="8" required>
+                
+                <label for="bairro">Bairro (ViaCEP):</label>
+                <input type="text" id="bairro" required readonly>
+                
+                <button type="submit" id="btn-cadastrar">Cadastrar Chamado</button>
+            </form>
+
+            <h2>Chamados Registrados</h2>
+            <ul id="lista-chamados"></ul>
+        </section>
+    </main>
+
+    <script>
+        let token = '';
+
+        // Consulta ViaCEP
+        document.getElementById('cep').addEventListener('blur', async (e) => {
+            const cep = e.target.value.replace(/\D/g, '');
+            if (cep.length === 8) {
+                try {
+                    const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const data = await res.json();
+                    if (!data.erro) {
+                        document.getElementById('bairro').value = data.bairro || data.logradouro;
+                    } else {
+                        alert('CEP não encontrado.');
+                    }
+                } catch (err) {
+                    console.error('Erro na busca do CEP:', err);
+                }
+            }
+        });
+
+        // Login
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, senha })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                token = data.token;
+                document.getElementById('sec-login').style.display = 'none';
+                document.getElementById('sec-app').style.display = 'block';
+                carregarChamados();
+            } else {
+                alert('Login inválido!');
+            }
+        });
+
+        // Trata o texto retornado do banco para aplicar a cor correta da tag
+function getTagClass(status) {
+    if (!status) return 'tag-media';
+    const s = status.toLowerCase();
+    if (s.includes('crítica') || s.includes('critica')) return 'tag-critica';
+    if (s.includes('baixa')) return 'tag-baixa';
+    return 'tag-media';
+}
+
+// Listar Chamados
+async function carregarChamados() {
+    const res = await fetch('/api/chamados', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const dados = await res.json();
+    const lista = document.getElementById('lista-chamados');
+    lista.innerHTML = dados.map(c => {
+        const prioridade = c.status && c.status !== 'Pendente' ? c.status : 'Média';
+        return `
+            <li>
+                <strong>#${c.id} - ${c.titulo}</strong><br>
+                <span>Bairro: ${c.bairro || 'Não informado'}</span> | 
+                <span>Prioridade IA: <b class="${getTagClass(prioridade)}">${prioridade}</b></span>
+            </li>
+        `;
+    }).join('');
+}
+
+        // Criar Chamado
+        document.getElementById('form-chamado').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-cadastrar');
+            btn.innerText = 'Classificando com IA...';
+            btn.disabled = true;
+
+            const titulo = document.getElementById('titulo').value;
+            const cep = document.getElementById('cep').value;
+            const bairro = document.getElementById('bairro').value;
+
+            await fetch('/api/chamados', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ titulo, cep, bairro })
+            });
+
+            btn.innerText = 'Cadastrar Chamado';
+            btn.disabled = false;
+            document.getElementById('form-chamado').reset();
+            carregarChamados();
+        });
+    </script>
+</body>
+</html>

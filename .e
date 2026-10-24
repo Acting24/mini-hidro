@@ -1,0 +1,1 @@
+JWT_SECRET=chave_secreta_para_testes_123

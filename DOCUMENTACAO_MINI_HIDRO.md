@@ -37,7 +37,7 @@ Em conformidade com as diretrizes da WCAG 2.1 AA, o sistema foi estruturado cons
 
 ---
 
-## 4. SUÍTE DE TESTES E QUALIDADE DE CÓDIGO
+## 4. TESTES E QUALIDADE DE CÓDIGO
 O projeto possui testes automatizados implementados com **Jest** e **Supertest** cobrindo:
 - Autenticação e bloqueio de rotas protegidas sem JWT.
 - Criação e consulta de chamados com banco de dados PostgreSQL.

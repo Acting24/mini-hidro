@@ -5,57 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini-Hidro Chamados + IA</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; max-width: 650px; }
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 650px; line-height: 1.5; }
+        
+        /* 1. SKIP LINK (Acessibilidade por Teclado) */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #0056b3;
+            color: white;
+            padding: 8px 12px;
+            z-index: 100;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 0 0 4px 4px;
+            transition: top 0.2s ease;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* 2. FOCUS VISÍVEL NÍTIDO */
+        input:focus-visible, button:focus-visible, a:focus-visible {
+            outline: 3px solid #0056b3;
+            outline-offset: 2px;
+        }
+
         form { margin-bottom: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
         label { display: block; margin-top: 10px; font-weight: bold; }
         input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-        button { margin-top: 15px; padding: 10px 15px; background: #0056b3; color: white; border: none; cursor: pointer; border-radius: 3px; }
+        button { margin-top: 15px; padding: 10px 15px; background: #0056b3; color: white; border: none; cursor: pointer; border-radius: 3px; font-weight: bold; }
         button:hover { background: #003d80; }
         ul { list-style-type: none; padding: 0; }
         li { padding: 12px; background: #f8f9fa; border: 1px solid #ddd; margin-bottom: 8px; border-radius: 4px; }
-        .tag-critica { color: white; background: #d9534f; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
-        .tag-media { color: white; background: #f0ad4e; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
-        .tag-baixa { color: white; background: #5cb85c; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+        
+        /* Tags de Prioridade com bom contraste */
+        .tag-critica { color: white; background: #d9534f; padding: 3px 8px; border-radius: 3px; font-size: 0.85em; font-weight: bold; }
+        .tag-media { color: #212529; background: #ffc107; padding: 3px 8px; border-radius: 3px; font-size: 0.85em; font-weight: bold; }
+        .tag-baixa { color: white; background: #28a745; padding: 3px 8px; border-radius: 3px; font-size: 0.85em; font-weight: bold; }
     </style>
 </head>
 <body>
+
+    <!-- Skip Link para navegação por teclado -->
+    <a href="#main-content" class="skip-link">Saltar para o conteúdo principal</a>
+
     <header>
         <h1>Mini-Hidro Chamados (com Gemini IA)</h1>
     </header>
 
-    <main>
+    <main id="main-content" role="main" tabIndex="-1">
         <!-- Form de Login -->
-        <section id="sec-login">
-            <h2>Autenticação</h2>
-            <form id="form-login">
+        <section id="sec-login" aria-labelledby="titulo-login">
+            <h2 id="titulo-login">Autenticação</h2>
+            <form id="form-login" aria-describedby="info-login">
+                <p id="info-login" style="display:none;">Entre com suas credenciais de aluno para acessar o sistema.</p>
+                
                 <label for="email">E-mail:</label>
-                <input type="email" id="email" value="aluno@univesp.br" required>
+                <input type="email" id="email" value="aluno@univesp.br" required aria-required="true" autocomplete="email">
                 
                 <label for="senha">Senha (use: 123456):</label>
-                <input type="password" id="senha" value="123456" required>
+                <input type="password" id="senha" value="123456" required aria-required="true" autocomplete="current-password">
                 
-                <button type="submit">Entrar</button>
+                <button type="submit" aria-label="Entrar no sistema Mini-Hidro">Entrar</button>
             </form>
         </section>
 
         <!-- Aplicação principal -->
-        <section id="sec-app" style="display:none;">
-            <h2>Abrir Novo Chamado</h2>
+        <section id="sec-app" style="display:none;" aria-labelledby="titulo-chamado">
+            <h2 id="titulo-chamado">Abrir Novo Chamado</h2>
             <form id="form-chamado">
                 <label for="titulo">Descrição do Problema:</label>
-                <input type="text" id="titulo" placeholder="Ex: Cano mestre estourado jorrando água na rua" required>
+                <input type="text" id="titulo" placeholder="Ex: Cano mestre estourado jorrando água na rua" required aria-required="true">
                 
                 <label for="cep">CEP:</label>
-                <input type="text" id="cep" placeholder="01310100" maxlength="8" required>
+                <input type="text" id="cep" placeholder="01310100" maxlength="8" required aria-required="true" aria-describedby="cep-help">
+                <span id="cep-help" style="font-size:0.8em; color:#555;">Informe apenas os 8 dígitos do CEP para buscar o bairro.</span>
                 
                 <label for="bairro">Bairro (ViaCEP):</label>
-                <input type="text" id="bairro" required readonly>
+                <input type="text" id="bairro" required readonly aria-readonly="true">
                 
-                <button type="submit" id="btn-cadastrar">Cadastrar Chamado</button>
+                <button type="submit" id="btn-cadastrar" aria-label="Cadastrar novo chamado hidráulico com triagem de IA">Cadastrar Chamado</button>
             </form>
 
-            <h2>Chamados Registrados</h2>
-            <ul id="lista-chamados"></ul>
+            <h2 id="titulo-lista">Chamados Registrados</h2>
+            <div id="status-anuncio" aria-live="polite" class="sr-only"></div>
+            <ul id="lista-chamados" aria-labelledby="titulo-lista"></ul>
         </section>
     </main>
 
@@ -103,33 +138,32 @@
             }
         });
 
-        // Trata o texto retornado do banco para aplicar a cor correta da tag
-function getTagClass(status) {
-    if (!status) return 'tag-media';
-    const s = status.toLowerCase();
-    if (s.includes('crítica') || s.includes('critica')) return 'tag-critica';
-    if (s.includes('baixa')) return 'tag-baixa';
-    return 'tag-media';
-}
+        function getTagClass(status) {
+            if (!status) return 'tag-media';
+            const s = status.toLowerCase();
+            if (s.includes('crítica') || s.includes('critica')) return 'tag-critica';
+            if (s.includes('baixa')) return 'tag-baixa';
+            return 'tag-media';
+        }
 
-// Listar Chamados
-async function carregarChamados() {
-    const res = await fetch('/api/chamados', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const dados = await res.json();
-    const lista = document.getElementById('lista-chamados');
-    lista.innerHTML = dados.map(c => {
-        const prioridade = c.status && c.status !== 'Pendente' ? c.status : 'Média';
-        return `
-            <li>
-                <strong>#${c.id} - ${c.titulo}</strong><br>
-                <span>Bairro: ${c.bairro || 'Não informado'}</span> | 
-                <span>Prioridade IA: <b class="${getTagClass(prioridade)}">${prioridade}</b></span>
-            </li>
-        `;
-    }).join('');
-}
+        // Listar Chamados
+        async function carregarChamados() {
+            const res = await fetch('/api/chamados', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const dados = await res.json();
+            const lista = document.getElementById('lista-chamados');
+            lista.innerHTML = dados.map(c => {
+                const prioridade = c.status && c.status !== 'Pendente' ? c.status : 'Média';
+                return `
+                    <li>
+                        <strong>#${c.id} - ${c.titulo}</strong><br>
+                        <span>Bairro: ${c.bairro || 'Não informado'}</span> | 
+                        <span>Prioridade IA: <b class="${getTagClass(prioridade)}" aria-label="Prioridade classificada como ${prioridade}">${prioridade}</b></span>
+                    </li>
+                `;
+            }).join('');
+        }
 
         // Criar Chamado
         document.getElementById('form-chamado').addEventListener('submit', async (e) => {
